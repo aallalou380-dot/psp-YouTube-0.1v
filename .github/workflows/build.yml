@@ -67,14 +67,26 @@ jobs:
 
           mkdir -p assets
 
+          echo "=== Creating ICON0.PNG ==="
+
+          convert assets/youtube.png \
+            -resize 48x48 \
+            -background "#121212" \
+            -gravity center \
+            -extent 144x80 \
+            PNG32:ICON0.PNG
+
+          echo "=== Creating youtube.raw ==="
+
           convert assets/youtube.png \
             -resize 48x48! \
             -depth 8 \
             RGBA:assets/youtube.raw
 
-          echo "=== YouTube icon ==="
+          echo "=== Generated files ==="
           ls -lh assets/youtube.png
           ls -lh assets/youtube.raw
+          ls -lh ICON0.PNG
 
       - name: Build PSP application
         run: |
@@ -86,5 +98,5 @@ jobs:
       - name: Upload EBOOT.PBP
         uses: actions/upload-artifact@v4
         with:
-          name: PSPYouTube-0.1
+          name: PSPYouTube-0.2v
           path: EBOOT.PBP
