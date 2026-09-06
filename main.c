@@ -2,7 +2,6 @@
 #include <pspdisplay.h>
 #include <pspctrl.h>
 #include <pspgu.h>
-#include <pspgum.h>
 
 #include <string.h>
 
@@ -15,24 +14,24 @@ PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 
 static unsigned int __attribute__((aligned(16))) list[262144];
 
-/* ---------------------------------------------------------
-   Colors
-   --------------------------------------------------------- */
+/* =========================================================
+   COLORS
+   ========================================================= */
 
 #define RGB(r,g,b) \
     (0xFF000000 | ((b) << 16) | ((g) << 8) | (r))
 
 #define COLOR_BG       RGB(18,18,18)
 #define COLOR_PANEL    RGB(25,25,25)
-#define COLOR_PANEL2   RGB(38,38,38)
+#define COLOR_CARD     RGB(40,40,40)
 #define COLOR_TEXT     RGB(240,240,240)
-#define COLOR_DIM      RGB(150,150,150)
+#define COLOR_DIM      RGB(145,145,145)
 #define COLOR_RED      RGB(230,35,35)
 #define COLOR_SELECT   RGB(55,55,55)
 
-/* ---------------------------------------------------------
-   Exit callback
-   --------------------------------------------------------- */
+/* =========================================================
+   EXIT CALLBACK
+   ========================================================= */
 
 int exit_callback(int arg1, int arg2, void *common)
 {
@@ -77,15 +76,18 @@ int SetupCallbacks(void)
     return thid;
 }
 
-/* ---------------------------------------------------------
-   Graphics initialization
-   --------------------------------------------------------- */
+/* =========================================================
+   GRAPHICS
+   ========================================================= */
 
 void initGraphics(void)
 {
     sceGuInit();
 
-    sceGuStart(GU_DIRECT, list);
+    sceGuStart(
+        GU_DIRECT,
+        list
+    );
 
     sceGuDrawBuffer(
         GU_PSM_8888,
@@ -143,9 +145,9 @@ void initGraphics(void)
     sceGuDisplay(GU_TRUE);
 }
 
-/* ---------------------------------------------------------
-   Rectangle
-   --------------------------------------------------------- */
+/* =========================================================
+   VERTEX
+   ========================================================= */
 
 typedef struct
 {
@@ -153,6 +155,10 @@ typedef struct
     float y;
     float z;
 } Vertex;
+
+/* =========================================================
+   RECTANGLE
+   ========================================================= */
 
 void drawRect(
     int x,
@@ -162,41 +168,34 @@ void drawRect(
     unsigned int color
 )
 {
-    Vertex *vertices;
+    Vertex *v;
 
-    sceGuDisable(GU_TEXTURE_2D);
     sceGuColor(color);
 
-    sceGuBegin(
+    v = (Vertex *)sceGuGetMemory(
+        sizeof(Vertex) * 2
+    );
+
+    v[0].x = (float)x;
+    v[0].y = (float)y;
+    v[0].z = 0.0f;
+
+    v[1].x = (float)(x + width);
+    v[1].y = (float)(y + height);
+    v[1].z = 0.0f;
+
+    sceGuDrawArray(
         GU_SPRITES,
-        GU_VERTEX_32BITF |
-        GU_TRANSFORM_2D
+        GU_VERTEX_32BITF | GU_TRANSFORM_2D,
+        2,
+        NULL,
+        v
     );
-
-    vertices = (Vertex *)sceGuGetMemory(
-        2 * sizeof(Vertex)
-    );
-
-    vertices[0].x = (float)x;
-    vertices[0].y = (float)y;
-    vertices[0].z = 0.0f;
-
-    vertices[1].x = (float)(x + width);
-    vertices[1].y = (float)(y + height);
-    vertices[1].z = 0.0f;
-
-    sceGuVertex(
-        GU_VERTEX_32BITF |
-        GU_TRANSFORM_2D,
-        vertices
-    );
-
-    sceGuEnd();
 }
 
-/* ---------------------------------------------------------
-   Border
-   --------------------------------------------------------- */
+/* =========================================================
+   BORDER
+   ========================================================= */
 
 void drawBorder(
     int x,
@@ -240,9 +239,9 @@ void drawBorder(
     );
 }
 
-/* ---------------------------------------------------------
-   Simple text
-   --------------------------------------------------------- */
+/* =========================================================
+   SIMPLE TEXT
+   ========================================================= */
 
 void drawText(
     int x,
@@ -251,26 +250,19 @@ void drawText(
     unsigned int color
 )
 {
-    /*
-       Temporary text representation.
-
-       We will replace this later with
-       a proper PSP font renderer.
-    */
-
     int i = 0;
 
     while (text[i] != '\0')
     {
-        int px = x + i * 7;
-
         /*
-           Small block representing a character.
-           This keeps the first graphical build simple.
+           Temporary character blocks.
+
+           We will replace this with a real
+           PSP font renderer later.
         */
 
         drawRect(
-            px,
+            x + i * 7,
             y,
             5,
             7,
@@ -281,9 +273,9 @@ void drawText(
     }
 }
 
-/* ---------------------------------------------------------
-   Video information
-   --------------------------------------------------------- */
+/* =========================================================
+   VIDEO DATA
+   ========================================================= */
 
 typedef struct
 {
@@ -324,9 +316,9 @@ static Video videos[] =
     }
 };
 
-/* ---------------------------------------------------------
-   Thumbnail
-   --------------------------------------------------------- */
+/* =========================================================
+   THUMBNAIL
+   ========================================================= */
 
 void drawThumbnail(
     int x,
@@ -341,13 +333,11 @@ void drawThumbnail(
         y,
         width,
         height,
-        COLOR_PANEL2
+        COLOR_CARD
     );
 
     /*
-       Fake thumbnail content.
-
-       Real YouTube thumbnails will be added later.
+       Fake thumbnail details
     */
 
     drawRect(
@@ -366,7 +356,9 @@ void drawThumbnail(
         COLOR_DIM
     );
 
-    /* Play button */
+    /*
+       Play button
+    */
 
     drawRect(
         x + width / 2 - 3,
@@ -392,6 +384,10 @@ void drawThumbnail(
         COLOR_RED
     );
 
+    /*
+       Selection border
+    */
+
     if (selected)
     {
         drawBorder(
@@ -405,9 +401,9 @@ void drawThumbnail(
     }
 }
 
-/* ---------------------------------------------------------
-   Sidebar
-   --------------------------------------------------------- */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 void drawSidebar(int selectedMenu)
 {
@@ -432,20 +428,20 @@ void drawSidebar(int selectedMenu)
     );
 
     /*
-       Logo
+       YouTube logo placeholder
     */
 
     drawRect(
         15,
         14,
-        28,
+        30,
         20,
         COLOR_RED
     );
 
     drawText(
-        50,
-        18,
+        52,
+        20,
         "PSP",
         COLOR_TEXT
     );
@@ -456,6 +452,10 @@ void drawSidebar(int selectedMenu)
         "YOUTUBE",
         COLOR_DIM
     );
+
+    /*
+       Menu
+    */
 
     for (i = 0; i < 5; i++)
     {
@@ -491,9 +491,9 @@ void drawSidebar(int selectedMenu)
     }
 }
 
-/* ---------------------------------------------------------
-   Home
-   --------------------------------------------------------- */
+/* =========================================================
+   HOME
+   ========================================================= */
 
 void drawHome(
     int selectedMenu,
@@ -509,6 +509,10 @@ void drawHome(
     int y1 = 76;
     int y2 = 180;
 
+    /*
+       Background
+    */
+
     drawRect(
         0,
         0,
@@ -517,7 +521,13 @@ void drawHome(
         COLOR_BG
     );
 
-    drawSidebar(selectedMenu);
+    /*
+       Sidebar
+    */
+
+    drawSidebar(
+        selectedMenu
+    );
 
     /*
        Header
@@ -533,7 +543,7 @@ void drawHome(
 
     drawText(
         145,
-        16,
+        17,
         "HOME",
         COLOR_TEXT
     );
@@ -560,7 +570,7 @@ void drawHome(
     );
 
     /*
-       Section
+       Section title
     */
 
     drawText(
@@ -675,9 +685,9 @@ void drawHome(
     );
 }
 
-/* ---------------------------------------------------------
-   Main
-   --------------------------------------------------------- */
+/* =========================================================
+   MAIN
+   ========================================================= */
 
 int main(void)
 {
@@ -764,21 +774,24 @@ int main(void)
             !(oldPad.Buttons & PSP_CTRL_CROSS))
         {
             /*
-               Video opening will be implemented later.
+               Video opening will be added later.
             */
         }
 
         /*
            O = BACK
-
-           No action on Home.
         */
 
-        /*
-           HOME
+        if ((pad.Buttons & PSP_CTRL_CIRCLE) &&
+            !(oldPad.Buttons & PSP_CTRL_CIRCLE))
+        {
+            /*
+               Nothing to do on Home.
+            */
+        }
 
-           Not handled manually.
-           PSP exit callback handles it.
+        /*
+           Draw frame
         */
 
         sceGuStart(
