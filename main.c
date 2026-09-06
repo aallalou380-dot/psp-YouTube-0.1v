@@ -3,45 +3,36 @@
 #include <pspctrl.h>
 #include <pspgu.h>
 #include <pspgum.h>
-#include <pspge.h>
 
-#include <stdio.h>
 #include <string.h>
 
 PSP_MODULE_INFO("PSP YouTube", 0, 1, 0);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 
-/* =========================================================
-   PSP SCREEN
-   ========================================================= */
-
 #define SCREEN_WIDTH  480
 #define SCREEN_HEIGHT 272
-
-#define BUF_WIDTH 512
+#define BUF_WIDTH     512
 
 static unsigned int __attribute__((aligned(16))) list[262144];
 
-/* =========================================================
-   COLORS
-   ========================================================= */
+/* ---------------------------------------------------------
+   Colors
+   --------------------------------------------------------- */
 
-#define RGB(r,g,b) ((unsigned int)(0xFF000000 | ((b) << 16) | ((g) << 8) | (r)))
+#define RGB(r,g,b) \
+    (0xFF000000 | ((b) << 16) | ((g) << 8) | (r))
 
-#define COLOR_BG        RGB(18,18,18)
-#define COLOR_PANEL     RGB(25,25,25)
-#define COLOR_PANEL2    RGB(32,32,32)
-#define COLOR_TEXT      RGB(235,235,235)
-#define COLOR_TEXT_DIM  RGB(150,150,150)
-#define COLOR_RED       RGB(230,35,35)
-#define COLOR_WHITE     RGB(255,255,255)
-#define COLOR_BLACK     RGB(0,0,0)
-#define COLOR_SELECT    RGB(55,55,55)
-#define COLOR_BORDER    RGB(255,45,45)
+#define COLOR_BG       RGB(18,18,18)
+#define COLOR_PANEL    RGB(25,25,25)
+#define COLOR_PANEL2   RGB(38,38,38)
+#define COLOR_TEXT     RGB(240,240,240)
+#define COLOR_DIM      RGB(150,150,150)
+#define COLOR_RED      RGB(230,35,35)
+#define COLOR_SELECT   RGB(55,55,55)
 
-/* =========================================================
-   CALLBACK
-   ========================================================= */
+/* ---------------------------------------------------------
+   Exit callback
+   --------------------------------------------------------- */
 
 int exit_callback(int arg1, int arg2, void *common)
 {
@@ -51,7 +42,9 @@ int exit_callback(int arg1, int arg2, void *common)
 
 int CallbackThread(SceSize args, void *argp)
 {
-    int cbid = sceKernelCreateCallback(
+    int cbid;
+
+    cbid = sceKernelCreateCallback(
         "Exit Callback",
         exit_callback,
         NULL
@@ -67,7 +60,9 @@ int CallbackThread(SceSize args, void *argp)
 
 int SetupCallbacks(void)
 {
-    int thid = sceKernelCreateThread(
+    int thid;
+
+    thid = sceKernelCreateThread(
         "CallbackThread",
         CallbackThread,
         0x11,
@@ -77,14 +72,14 @@ int SetupCallbacks(void)
     );
 
     if (thid >= 0)
-        sceKernelStartThread(thid, 0, 0);
+        sceKernelStartThread(thid, 0, NULL);
 
     return thid;
 }
 
-/* =========================================================
-   GU INITIALIZATION
-   ========================================================= */
+/* ---------------------------------------------------------
+   Graphics initialization
+   --------------------------------------------------------- */
 
 void initGraphics(void)
 {
@@ -111,8 +106,8 @@ void initGraphics(void)
     );
 
     sceGuOffset(
-        2048 - (SCREEN_WIDTH / 2),
-        2048 - (SCREEN_HEIGHT / 2)
+        2048 - SCREEN_WIDTH / 2,
+        2048 - SCREEN_HEIGHT / 2
     );
 
     sceGuViewport(
@@ -122,7 +117,10 @@ void initGraphics(void)
         SCREEN_HEIGHT
     );
 
-    sceGuDepthRange(65535, 0);
+    sceGuDepthRange(
+        65535,
+        0
+    );
 
     sceGuScissor(
         0,
@@ -141,12 +139,20 @@ void initGraphics(void)
     sceGuSync(0, 0);
 
     sceDisplayWaitVblankStart();
+
     sceGuDisplay(GU_TRUE);
 }
 
-/* =========================================================
-   DRAW RECTANGLE
-   ========================================================= */
+/* ---------------------------------------------------------
+   Rectangle
+   --------------------------------------------------------- */
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+} Vertex;
 
 void drawRect(
     int x,
@@ -156,30 +162,41 @@ void drawRect(
     unsigned int color
 )
 {
-    sceGuDisable(GU_TEXTURE_2D);
+    Vertex *vertices;
 
+    sceGuDisable(GU_TEXTURE_2D);
     sceGuColor(color);
 
-    sceGuBegin(GU_SPRITES, GU_VERTEX_32BITF | GU_TRANSFORM_2D);
-
-    sceGuVertex(
-        (float)x,
-        (float)y,
-        0.0f
+    sceGuBegin(
+        GU_SPRITES,
+        GU_VERTEX_32BITF |
+        GU_TRANSFORM_2D
     );
 
+    vertices = (Vertex *)sceGuGetMemory(
+        2 * sizeof(Vertex)
+    );
+
+    vertices[0].x = (float)x;
+    vertices[0].y = (float)y;
+    vertices[0].z = 0.0f;
+
+    vertices[1].x = (float)(x + width);
+    vertices[1].y = (float)(y + height);
+    vertices[1].z = 0.0f;
+
     sceGuVertex(
-        (float)(x + width),
-        (float)(y + height),
-        0.0f
+        GU_VERTEX_32BITF |
+        GU_TRANSFORM_2D,
+        vertices
     );
 
     sceGuEnd();
 }
 
-/* =========================================================
-   BORDER
-   ========================================================= */
+/* ---------------------------------------------------------
+   Border
+   --------------------------------------------------------- */
 
 void drawBorder(
     int x,
@@ -223,194 +240,50 @@ void drawBorder(
     );
 }
 
-/* =========================================================
-   SIMPLE PIXEL FONT
-   ========================================================= */
-
-static const unsigned char font5x7[96][7] =
-{
-    {0,0,0,0,0,0,0},
-    {4,4,4,4,4,0,4},
-    {10,10,0,0,0,0,0},
-    {10,31,10,10,31,10,0},
-    {4,15,20,14,5,30,4},
-    {24,25,2,4,8,19,3},
-    {12,18,20,8,21,18,13},
-    {6,4,0,0,0,0,0},
-    {2,4,8,8,8,4,2},
-    {8,4,2,2,2,4,8},
-    {0,4,21,14,21,4,0},
-    {0,4,4,31,4,4,0},
-    {0,0,0,0,6,4,8},
-    {0,0,0,31,0,0,0},
-    {0,0,0,0,0,6,6},
-    {0,1,2,4,8,16,0},
-
-    {14,17,19,21,25,17,14},
-    {4,12,4,4,4,4,14},
-    {14,17,1,2,4,8,31},
-    {31,2,4,2,1,17,14},
-    {2,6,10,18,31,2,2},
-    {31,16,30,1,1,17,14},
-    {6,8,16,30,17,17,14},
-    {31,1,2,4,8,8,8},
-    {14,17,17,14,17,17,14},
-    {14,17,17,15,1,2,12},
-
-    {0,0,6,6,0,6,6},
-    {0,0,6,6,0,4,8},
-    {2,4,8,16,8,4,2},
-    {0,0,31,0,31,0,0},
-    {8,4,2,1,2,4,8},
-    {14,17,1,2,4,0,4},
-
-    {14,17,1,13,21,21,14},
-    {14,17,17,31,17,17,17},
-    {30,17,17,30,17,17,30},
-    {14,17,16,16,16,17,14},
-    {30,17,17,17,17,17,30},
-    {31,16,16,30,16,16,31},
-    {31,16,16,30,16,16,16},
-    {14,17,16,23,17,17,15},
-    {17,17,17,31,17,17,17},
-    {14,4,4,4,4,4,14},
-    {7,2,2,2,18,18,12},
-    {17,18,20,24,20,18,17},
-    {16,16,16,16,16,16,31},
-    {17,27,21,21,17,17,17},
-    {17,25,21,19,17,17,17},
-    {14,17,17,17,17,17,14},
-    {30,17,17,30,16,16,16},
-    {14,17,17,17,21,18,13},
-    {30,17,17,30,20,18,17},
-    {15,16,16,14,1,1,30},
-    {31,4,4,4,4,4,4},
-    {17,17,17,17,17,17,14},
-    {17,17,17,17,17,10,4},
-    {17,17,17,21,21,27,17},
-    {17,17,10,4,10,17,17},
-    {17,17,10,4,4,4,4},
-    {31,1,2,4,8,16,31},
-
-    {14,8,8,8,8,8,14},
-    {16,8,4,2,1,0,0},
-    {14,2,2,2,2,2,14},
-    {4,10,17,0,0,0,0},
-    {0,0,0,0,0,0,31},
-    {8,4,2,0,0,0,0},
-
-    {0,0,14,1,15,17,15},
-    {16,16,22,25,17,17,30},
-    {0,0,14,17,16,17,14},
-    {1,1,13,19,17,17,15},
-    {0,0,14,17,31,16,14},
-    {6,9,8,28,8,8,8},
-    {0,0,15,17,17,15,1,14},
-    {16,16,22,25,17,17,17},
-    {4,0,12,4,4,4,14},
-    {2,0,6,2,2,18,12},
-    {16,16,18,20,24,20,18},
-    {12,4,4,4,4,4,14},
-    {0,0,26,21,21,17,17},
-    {0,0,22,25,17,17,17},
-    {0,0,14,17,17,17,14},
-    {0,0,30,17,17,30,16},
-    {0,0,15,17,17,15,1,1},
-    {0,0,22,25,16,16,16},
-    {0,0,15,16,14,1,30},
-    {8,8,28,8,8,9,6},
-    {0,0,17,17,17,19,13},
-    {0,0,17,17,17,10,4},
-    {0,0,17,17,21,21,10},
-    {0,0,17,10,4,10,17},
-    {0,0,17,17,17,15,1,14},
-    {0,0,31,2,4,8,31},
-    {3,4,4,8,4,4,3},
-    {4,4,4,4,4,4,4},
-    {24,4,4,2,4,4,24},
-    {8,21,2,0,0,0,0},
-    {0,0,0,0,0,0,0}
-};
-
-/* =========================================================
-   DRAW CHARACTER
-   ========================================================= */
-
-void drawChar(
-    int x,
-    int y,
-    char c,
-    int scale,
-    unsigned int color
-)
-{
-    if (c < 32 || c > 127)
-        return;
-
-    const unsigned char *glyph =
-        font5x7[c - 32];
-
-    for (int row = 0; row < 7; row++)
-    {
-        unsigned char bits = glyph[row];
-
-        for (int col = 0; col < 5; col++)
-        {
-            if (bits & (1 << (4 - col)))
-            {
-                drawRect(
-                    x + col * scale,
-                    y + row * scale,
-                    scale,
-                    scale,
-                    color
-                );
-            }
-        }
-    }
-}
-
-/* =========================================================
-   DRAW TEXT
-   ========================================================= */
+/* ---------------------------------------------------------
+   Simple text
+   --------------------------------------------------------- */
 
 void drawText(
     int x,
     int y,
     const char *text,
-    int scale,
     unsigned int color
 )
 {
-    int pos = x;
+    /*
+       Temporary text representation.
 
-    while (*text)
+       We will replace this later with
+       a proper PSP font renderer.
+    */
+
+    int i = 0;
+
+    while (text[i] != '\0')
     {
-        if (*text == '\n')
-        {
-            y += 8 * scale;
-            pos = x;
-        }
-        else
-        {
-            drawChar(
-                pos,
-                y,
-                *text,
-                scale,
-                color
-            );
+        int px = x + i * 7;
 
-            pos += 6 * scale;
-        }
+        /*
+           Small block representing a character.
+           This keeps the first graphical build simple.
+        */
 
-        text++;
+        drawRect(
+            px,
+            y,
+            5,
+            7,
+            color
+        );
+
+        i++;
     }
 }
 
-/* =========================================================
-   VIDEO DATA
-   ========================================================= */
+/* ---------------------------------------------------------
+   Video information
+   --------------------------------------------------------- */
 
 typedef struct
 {
@@ -418,38 +291,51 @@ typedef struct
     const char *channel;
 } Video;
 
-Video videos[] =
+static Video videos[] =
 {
-    {"Welcome to PSP YouTube", "PSP Channel"},
-    {"Latest Gaming Videos",   "Gaming"},
-    {"PSP Homebrew News",      "PSP Dev"},
-    {"Retro Games",            "Retro"},
-    {"Technology",             "Tech"},
-    {"New PSP Projects",       "Homebrew"}
+    {
+        "Welcome to PSP YouTube",
+        "PSP Channel"
+    },
+
+    {
+        "Latest Gaming Videos",
+        "Gaming"
+    },
+
+    {
+        "PSP Homebrew News",
+        "PSP Dev"
+    },
+
+    {
+        "Retro Games",
+        "Retro"
+    },
+
+    {
+        "Technology",
+        "Tech"
+    },
+
+    {
+        "New PSP Projects",
+        "Homebrew"
+    }
 };
 
-#define VIDEO_COUNT 6
-
-/* =========================================================
-   DRAW THUMBNAIL
-   ========================================================= */
+/* ---------------------------------------------------------
+   Thumbnail
+   --------------------------------------------------------- */
 
 void drawThumbnail(
     int x,
     int y,
     int width,
     int height,
-    int index,
     int selected
 )
 {
-    /*
-       Placeholder thumbnail.
-
-       Later this area will contain
-       real YouTube thumbnail images.
-    */
-
     drawRect(
         x,
         y,
@@ -458,45 +344,51 @@ void drawThumbnail(
         COLOR_PANEL2
     );
 
-    /* fake image pattern */
+    /*
+       Fake thumbnail content.
+
+       Real YouTube thumbnails will be added later.
+    */
+
     drawRect(
-        x + 5,
-        y + 5,
-        width - 10,
+        x + 8,
+        y + 8,
+        width - 16,
         4,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 
     drawRect(
-        x + 5,
-        y + height - 9,
-        width - 10,
+        x + 8,
+        y + height - 12,
+        width - 16,
         4,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 
-    /* Play symbol */
+    /* Play button */
+
     drawRect(
         x + width / 2 - 3,
-        y + height / 2 - 18,
+        y + height / 2 - 15,
         6,
-        36,
+        30,
         COLOR_RED
     );
 
     drawRect(
         x + width / 2 + 3,
-        y + height / 2 - 12,
+        y + height / 2 - 9,
         6,
-        24,
+        18,
         COLOR_RED
     );
 
     drawRect(
         x + width / 2 + 9,
-        y + height / 2 - 6,
+        y + height / 2 - 3,
         6,
-        12,
+        6,
         COLOR_RED
     );
 
@@ -508,50 +400,17 @@ void drawThumbnail(
             width + 4,
             height + 4,
             3,
-            COLOR_BORDER
+            COLOR_RED
         );
     }
 }
 
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
+/* ---------------------------------------------------------
+   Sidebar
+   --------------------------------------------------------- */
 
 void drawSidebar(int selectedMenu)
 {
-    drawRect(
-        0,
-        0,
-        125,
-        SCREEN_HEIGHT,
-        COLOR_PANEL
-    );
-
-    /* Logo */
-    drawRect(
-        15,
-        14,
-        28,
-        20,
-        COLOR_RED
-    );
-
-    drawText(
-        48,
-        17,
-        "PSP",
-        2,
-        COLOR_WHITE
-    );
-
-    drawText(
-        15,
-        43,
-        "YOUTUBE",
-        1,
-        COLOR_TEXT_DIM
-    );
-
     const char *items[] =
     {
         "HOME",
@@ -561,25 +420,60 @@ void drawSidebar(int selectedMenu)
         "SETTINGS"
     };
 
+    int i;
     int y = 72;
 
-    for (int i = 0; i < 5; i++)
+    drawRect(
+        0,
+        0,
+        125,
+        SCREEN_HEIGHT,
+        COLOR_PANEL
+    );
+
+    /*
+       Logo
+    */
+
+    drawRect(
+        15,
+        14,
+        28,
+        20,
+        COLOR_RED
+    );
+
+    drawText(
+        50,
+        18,
+        "PSP",
+        COLOR_TEXT
+    );
+
+    drawText(
+        15,
+        43,
+        "YOUTUBE",
+        COLOR_DIM
+    );
+
+    for (i = 0; i < 5; i++)
     {
         if (i == selectedMenu)
         {
             drawRect(
                 8,
-                y - 6,
-                109,
-                25,
+                y - 7,
+                108,
+                24,
                 COLOR_SELECT
             );
 
             drawRect(
                 8,
-                y - 6,
+                y - 7,
                 4,
-                25,
+                24,
                 COLOR_RED
             );
         }
@@ -588,26 +482,33 @@ void drawSidebar(int selectedMenu)
             20,
             y,
             items[i],
-            1,
             i == selectedMenu
-                ? COLOR_WHITE
-                : COLOR_TEXT_DIM
+                ? COLOR_TEXT
+                : COLOR_DIM
         );
 
         y += 32;
     }
 }
 
-/* =========================================================
-   HOME SCREEN
-   ========================================================= */
+/* ---------------------------------------------------------
+   Home
+   --------------------------------------------------------- */
 
 void drawHome(
     int selectedMenu,
     int selectedVideo
 )
 {
-    /* Background */
+    int cardWidth = 150;
+    int cardHeight = 76;
+
+    int x1 = 145;
+    int x2 = 315;
+
+    int y1 = 76;
+    int y2 = 180;
+
     drawRect(
         0,
         0,
@@ -616,10 +517,12 @@ void drawHome(
         COLOR_BG
     );
 
-    /* Sidebar */
     drawSidebar(selectedMenu);
 
-    /* Top bar */
+    /*
+       Header
+    */
+
     drawRect(
         125,
         0,
@@ -630,59 +533,52 @@ void drawHome(
 
     drawText(
         145,
-        14,
+        16,
         "HOME",
-        2,
-        COLOR_WHITE
+        COLOR_TEXT
     );
 
-    /* Search icon */
+    /*
+       Search icon
+    */
+
     drawBorder(
-        418,
-        12,
-        14,
-        14,
+        420,
+        10,
+        13,
+        13,
         2,
         COLOR_TEXT
     );
 
     drawRect(
-        430,
-        25,
-        8,
+        431,
+        22,
+        7,
         2,
         COLOR_TEXT
     );
 
-    /* Content title */
+    /*
+       Section
+    */
+
     drawText(
         145,
         57,
         "RECOMMENDED",
-        1,
         COLOR_TEXT
     );
 
     /*
-       Two-column layout
+       Video 0
     */
 
-    int cardWidth = 150;
-    int cardHeight = 78;
-
-    int x1 = 145;
-    int x2 = 315;
-
-    int y1 = 76;
-    int y2 = 180;
-
-    /* Video 0 */
     drawThumbnail(
         x1,
         y1,
         cardWidth,
         cardHeight,
-        0,
         selectedVideo == 0
     );
 
@@ -690,25 +586,25 @@ void drawHome(
         x1,
         y1 + cardHeight + 7,
         videos[0].title,
-        1,
-        COLOR_WHITE
+        COLOR_TEXT
     );
 
     drawText(
         x1,
         y1 + cardHeight + 18,
         videos[0].channel,
-        1,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 
-    /* Video 1 */
+    /*
+       Video 1
+    */
+
     drawThumbnail(
         x2,
         y1,
         cardWidth,
         cardHeight,
-        1,
         selectedVideo == 1
     );
 
@@ -716,25 +612,25 @@ void drawHome(
         x2,
         y1 + cardHeight + 7,
         videos[1].title,
-        1,
-        COLOR_WHITE
+        COLOR_TEXT
     );
 
     drawText(
         x2,
         y1 + cardHeight + 18,
         videos[1].channel,
-        1,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 
-    /* Video 2 */
+    /*
+       Video 2
+    */
+
     drawThumbnail(
         x1,
         y2,
         cardWidth,
         cardHeight,
-        2,
         selectedVideo == 2
     );
 
@@ -742,25 +638,25 @@ void drawHome(
         x1,
         y2 + cardHeight + 7,
         videos[2].title,
-        1,
-        COLOR_WHITE
+        COLOR_TEXT
     );
 
     drawText(
         x1,
         y2 + cardHeight + 18,
         videos[2].channel,
-        1,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 
-    /* Video 3 */
+    /*
+       Video 3
+    */
+
     drawThumbnail(
         x2,
         y2,
         cardWidth,
         cardHeight,
-        3,
         selectedVideo == 3
     );
 
@@ -768,40 +664,28 @@ void drawHome(
         x2,
         y2 + cardHeight + 7,
         videos[3].title,
-        1,
-        COLOR_WHITE
+        COLOR_TEXT
     );
 
     drawText(
         x2,
         y2 + cardHeight + 18,
         videos[3].channel,
-        1,
-        COLOR_TEXT_DIM
-    );
-
-    /* Bottom hint */
-    drawText(
-        145,
-        258,
-        "X SELECT    O BACK",
-        1,
-        COLOR_TEXT_DIM
+        COLOR_DIM
     );
 }
 
-/* =========================================================
-   MAIN
-   ========================================================= */
+/* ---------------------------------------------------------
+   Main
+   --------------------------------------------------------- */
 
 int main(void)
 {
-    SetupCallbacks();
-
-    initGraphics();
-
     SceCtrlData pad;
     SceCtrlData oldPad;
+
+    int selectedMenu = 0;
+    int selectedVideo = 0;
 
     memset(
         &oldPad,
@@ -809,8 +693,9 @@ int main(void)
         sizeof(oldPad)
     );
 
-    int selectedMenu = 0;
-    int selectedVideo = 0;
+    SetupCallbacks();
+
+    initGraphics();
 
     while (1)
     {
@@ -822,76 +707,78 @@ int main(void)
         /*
            DOWN
         */
+
         if ((pad.Buttons & PSP_CTRL_DOWN) &&
             !(oldPad.Buttons & PSP_CTRL_DOWN))
         {
-            if (selectedVideo < 3)
-                selectedVideo++;
+            if (selectedVideo == 0)
+                selectedVideo = 2;
+            else if (selectedVideo == 1)
+                selectedVideo = 3;
         }
 
         /*
            UP
         */
+
         if ((pad.Buttons & PSP_CTRL_UP) &&
             !(oldPad.Buttons & PSP_CTRL_UP))
         {
-            if (selectedVideo > 0)
-                selectedVideo--;
+            if (selectedVideo == 2)
+                selectedVideo = 0;
+            else if (selectedVideo == 3)
+                selectedVideo = 1;
         }
 
         /*
            RIGHT
         */
+
         if ((pad.Buttons & PSP_CTRL_RIGHT) &&
             !(oldPad.Buttons & PSP_CTRL_RIGHT))
         {
-            if (selectedVideo == 0 ||
-                selectedVideo == 2)
-            {
-                selectedVideo++;
-            }
+            if (selectedVideo == 0)
+                selectedVideo = 1;
+            else if (selectedVideo == 2)
+                selectedVideo = 3;
         }
 
         /*
            LEFT
         */
+
         if ((pad.Buttons & PSP_CTRL_LEFT) &&
             !(oldPad.Buttons & PSP_CTRL_LEFT))
         {
-            if (selectedVideo == 1 ||
-                selectedVideo == 3)
-            {
-                selectedVideo--;
-            }
+            if (selectedVideo == 1)
+                selectedVideo = 0;
+            else if (selectedVideo == 3)
+                selectedVideo = 2;
         }
 
         /*
            X = SELECT
         */
+
         if ((pad.Buttons & PSP_CTRL_CROSS) &&
             !(oldPad.Buttons & PSP_CTRL_CROSS))
         {
             /*
-               Later:
-               open selected YouTube video.
+               Video opening will be implemented later.
             */
         }
 
         /*
            O = BACK
+
+           No action on Home.
         */
-        if ((pad.Buttons & PSP_CTRL_CIRCLE) &&
-            !(oldPad.Buttons & PSP_CTRL_CIRCLE))
-        {
-            /*
-               Later:
-               return to previous screen.
-            */
-        }
 
         /*
-           HOME is NOT handled here.
-           PSP's normal exit callback handles it.
+           HOME
+
+           Not handled manually.
+           PSP exit callback handles it.
         */
 
         sceGuStart(
@@ -905,6 +792,7 @@ int main(void)
         );
 
         sceGuFinish();
+
         sceGuSync(
             0,
             0
