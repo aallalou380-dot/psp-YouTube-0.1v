@@ -1,4 +1,4 @@
-name: Build PSP YouTube
+name: Build PSP App
 
 on:
   push:
@@ -42,9 +42,11 @@ jobs:
           cd pspsdk
 
           ./bootstrap
+
           ./configure --prefix="$PSPDEV/psp"
 
           make -j2
+
           make install
 
       - name: Verify PSP development environment
@@ -58,7 +60,23 @@ jobs:
           echo "=== PSP CONFIG ==="
           psp-config --pspsdk-path
 
-      - name: Build PSP YouTube
+      - name: Prepare YouTube icon
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+          mkdir -p assets
+
+          convert assets/youtube.png \
+            -resize 48x48! \
+            -depth 8 \
+            RGBA:assets/youtube.raw
+
+          echo "=== YouTube icon ==="
+          ls -lh assets/youtube.png
+          ls -lh assets/youtube.raw
+
+      - name: Build PSP application
         run: |
           export PSPDEV=/usr/local/pspdev
           export PATH=$PSPDEV/bin:$PATH
