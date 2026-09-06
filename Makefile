@@ -9,7 +9,9 @@ ASFLAGS = $(CFLAGS)
 LIBS = -lpspgu -lpspdisplay -lpspctrl -lpspsdk
 
 EXTRA_TARGETS = EBOOT.PBP
-PSP_EBOOT_TITLE = PSP YouTube 0.1
+
+PSP_EBOOT_TITLE = PSP YouTube 0.2v
+PSP_EBOOT_ICON = ICON0.PNG
 
 PSPSDK = $(shell psp-config --pspsdk-path)
 
