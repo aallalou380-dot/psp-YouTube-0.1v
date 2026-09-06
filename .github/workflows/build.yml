@@ -1,0 +1,72 @@
+name: Build PSP YouTube
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      PSPDEV: /usr/local/pspdev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare PSP toolchain
+        run: |
+          sudo mkdir -p /usr/local/pspdev
+          sudo chown -R "$USER:$USER" /usr/local/pspdev
+
+          git clone --depth 1 https://github.com/pspdev/psptoolchain.git
+
+          cd psptoolchain
+
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+
+          ./prepare.sh
+          ./toolchain.sh
+
+      - name: Install PSPSDK
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+
+          git clone --depth 1 https://github.com/pspdev/pspsdk.git
+
+          cd pspsdk
+
+          ./bootstrap
+          ./configure --prefix="$PSPDEV/psp"
+
+          make -j2
+          make install
+
+      - name: Verify PSP development environment
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+
+          echo "=== PSP GCC ==="
+          psp-gcc --version
+
+          echo "=== PSP CONFIG ==="
+          psp-config --pspsdk-path
+
+      - name: Build PSP YouTube
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+
+          make
+
+      - name: Upload EBOOT.PBP
+        uses: actions/upload-artifact@v4
+        with:
+          name: PSPYouTube-0.1
+          path: EBOOT.PBP
