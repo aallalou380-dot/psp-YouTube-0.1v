@@ -192,6 +192,9 @@ void drawBorder(
     unsigned int color
 )
 {
+    if (width <= 0 || height <= 0 || thickness <= 0)
+        return;
+
     drawRect(
         x,
         y,
@@ -298,14 +301,16 @@ void drawChar(
 {
     int row;
     int col;
-
     int idx = fontIndex(c);
 
-    for (row = 0; row < 5; row++) {
+    for (row = 0; row < 5; row++)
+    {
         unsigned char bits = font5x5[idx][row];
 
-        for (col = 0; col < 5; col++) {
-            if (bits & (1 << (4 - col))) {
+        for (col = 0; col < 5; col++)
+        {
+            if (bits & (1 << (4 - col)))
+            {
                 drawRect(
                     x + col * scale,
                     y + row * scale,
@@ -327,7 +332,8 @@ void drawText(
 {
     int i = 0;
 
-    while (text[i] != '\0') {
+    while (text[i] != '\0')
+    {
         drawChar(
             x + i * 6,
             y,
@@ -349,7 +355,8 @@ void drawTextLarge(
 {
     int i = 0;
 
-    while (text[i] != '\0') {
+    while (text[i] != '\0')
+    {
         drawChar(
             x + i * 12,
             y,
@@ -422,8 +429,8 @@ void drawThumbnail(
     );
 
     /*
-     * Simple video symbol.
-     * This will later be replaced with real thumbnails.
+     * Temporary video symbol.
+     * Real thumbnails will be added later.
      */
 
     drawRect(
@@ -441,6 +448,10 @@ void drawThumbnail(
         3,
         COLOR_DIM
     );
+
+    /*
+     * Play symbol
+     */
 
     drawRect(
         x + width / 2 - 7,
@@ -466,7 +477,8 @@ void drawThumbnail(
         COLOR_RED
     );
 
-    if (selected) {
+    if (selected)
+    {
         drawBorder(
             x - 2,
             y - 2,
@@ -556,7 +568,10 @@ void drawHeader(int page)
 
 #define SIDEBAR_WIDTH 125
 
-void drawSidebar(int selectedMenu, int sidebarX)
+void drawSidebar(
+    int selectedMenu,
+    int sidebarX
+)
 {
     const char *items[] = {
         "HOME",
@@ -573,7 +588,8 @@ void drawSidebar(int selectedMenu, int sidebarX)
      * Shadow
      */
 
-    if (sidebarX >= 0) {
+    if (sidebarX >= 0)
+    {
         drawRect(
             sidebarX + SIDEBAR_WIDTH,
             0,
@@ -645,10 +661,10 @@ void drawSidebar(int selectedMenu, int sidebarX)
      * Menu
      */
 
-    for (i = 0; i < 5; i++) {
-
-        if (i == selectedMenu) {
-
+    for (i = 0; i < 5; i++)
+    {
+        if (i == selectedMenu)
+        {
             drawRect(
                 sidebarX + 8,
                 y - 8,
@@ -701,7 +717,6 @@ void drawHome(int selectedVideo)
 
     const int x1 = 20;
     const int x2 = 190;
-    const int x3 = 360;
 
     /*
      * Background
@@ -747,12 +762,6 @@ void drawHome(int selectedVideo)
         cardHeight,
         selectedVideo == 1
     );
-
-    /*
-     * We only have 480 pixels.
-     * The third position is intentionally kept
-     * for future expansion.
-     */
 
     drawText(
         x1,
@@ -978,8 +987,7 @@ void drawSearch(void)
     );
 
     /*
-     * Keyboard placeholder.
-     * Real PSP keyboard/input will be added later.
+     * Input placeholder
      */
 
     drawText(
@@ -1083,12 +1091,12 @@ void drawSettings(int selectedSetting)
         COLOR_TEXT
     );
 
-    for (i = 0; i < 4; i++) {
-
+    for (i = 0; i < 4; i++)
+    {
         int y = 90 + i * 38;
 
-        if (i == selectedSetting) {
-
+        if (i == selectedSetting)
+        {
             drawRect(
                 20,
                 y - 7,
@@ -1151,6 +1159,16 @@ void drawSettings(int selectedSetting)
 
 void drawVideoDetails(int selectedVideo)
 {
+    /*
+     * Safety for array access.
+     */
+
+    if (selectedVideo < 0)
+        selectedVideo = 0;
+
+    if (selectedVideo >= VIDEO_COUNT)
+        selectedVideo = VIDEO_COUNT - 1;
+
     drawRect(
         0,
         0,
@@ -1211,17 +1229,4 @@ void drawVideoDetails(int selectedVideo)
     );
 
     drawText(
-        325,
-        152,
-        "PLAY",
-        COLOR_TEXT
-    );
-
-    /*
-     * Description area
-     */
-
-    drawBorder(
-        20,
-        195,
-  
+        32
