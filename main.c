@@ -42,7 +42,9 @@ int exit_callback(int arg1, int arg2, void *common)
 
 int CallbackThread(SceSize args, void *argp)
 {
-    int cbid = sceKernelCreateCallback(
+    int cbid;
+
+    cbid = sceKernelCreateCallback(
         "Exit Callback",
         exit_callback,
         NULL
@@ -58,7 +60,9 @@ int CallbackThread(SceSize args, void *argp)
 
 int SetupCallbacks(void)
 {
-    int thid = sceKernelCreateThread(
+    int thid;
+
+    thid = sceKernelCreateThread(
         "CallbackThread",
         CallbackThread,
         0x11,
@@ -141,7 +145,8 @@ void initGraphics(void)
 /* Basic drawing                                               */
 /* --------------------------------------------------------- */
 
-typedef struct {
+typedef struct
+{
     float x;
     float y;
     float z;
@@ -192,7 +197,9 @@ void drawBorder(
     unsigned int color
 )
 {
-    if (width <= 0 || height <= 0 || thickness <= 0)
+    if (width <= 0 ||
+        height <= 0 ||
+        thickness <= 0)
         return;
 
     drawRect(
@@ -232,7 +239,8 @@ void drawBorder(
 /* Font                                                        */
 /* --------------------------------------------------------- */
 
-static const unsigned char font5x5[37][5] = {
+static const unsigned char font5x5[37][5] =
+{
     {0,0,0,0,0},
 
     {14,17,31,17,17},
@@ -301,7 +309,9 @@ void drawChar(
 {
     int row;
     int col;
-    int idx = fontIndex(c);
+    int idx;
+
+    idx = fontIndex(c);
 
     for (row = 0; row < 5; row++)
     {
@@ -373,12 +383,14 @@ void drawTextLarge(
 /* Video data                                                  */
 /* --------------------------------------------------------- */
 
-typedef struct {
+typedef struct
+{
     const char *title;
     const char *channel;
 } Video;
 
-static Video videos[] = {
+static Video videos[] =
+{
     {"Welcome to PSP YouTube", "PSP Channel"},
     {"Latest Gaming Videos", "Gaming"},
     {"PSP Homebrew News", "PSP Dev"},
@@ -390,7 +402,7 @@ static Video videos[] = {
 #define VIDEO_COUNT 6
 
 /* --------------------------------------------------------- */
-/* Application states                                          */
+/* Application pages                                           */
 /* --------------------------------------------------------- */
 
 #define PAGE_HOME       0
@@ -428,11 +440,6 @@ void drawThumbnail(
         COLOR_CARD2
     );
 
-    /*
-     * Temporary video symbol.
-     * Real thumbnails will be added later.
-     */
-
     drawRect(
         x + 10,
         y + 10,
@@ -450,7 +457,7 @@ void drawThumbnail(
     );
 
     /*
-     * Play symbol
+     * Temporary play symbol
      */
 
     drawRect(
@@ -496,7 +503,8 @@ void drawThumbnail(
 
 void drawHeader(int page)
 {
-    const char *titles[] = {
+    const char *titles[] =
+    {
         "HOME",
         "TRENDING",
         "SEARCH",
@@ -520,10 +528,6 @@ void drawHeader(int page)
         COLOR_TEXT
     );
 
-    /*
-     * Search indicator
-     */
-
     drawBorder(
         350,
         10,
@@ -539,10 +543,6 @@ void drawHeader(int page)
         "SEARCH",
         COLOR_DIM
     );
-
-    /*
-     * Magnifier
-     */
 
     drawBorder(
         443,
@@ -573,7 +573,8 @@ void drawSidebar(
     int sidebarX
 )
 {
-    const char *items[] = {
+    const char *items[] =
+    {
         "HOME",
         "TRENDING",
         "SEARCH",
@@ -583,10 +584,6 @@ void drawSidebar(
 
     int i;
     int y = 75;
-
-    /*
-     * Shadow
-     */
 
     if (sidebarX >= 0)
     {
@@ -599,10 +596,6 @@ void drawSidebar(
         );
     }
 
-    /*
-     * Main panel
-     */
-
     drawRect(
         sidebarX,
         0,
@@ -610,10 +603,6 @@ void drawSidebar(
         SCREEN_HEIGHT,
         COLOR_PANEL
     );
-
-    /*
-     * Border
-     */
 
     drawRect(
         sidebarX + SIDEBAR_WIDTH - 1,
@@ -694,10 +683,6 @@ void drawSidebar(
         y += 32;
     }
 
-    /*
-     * Bottom hint
-     */
-
     drawText(
         sidebarX + 17,
         245,
@@ -718,10 +703,6 @@ void drawHome(int selectedVideo)
     const int x1 = 20;
     const int x2 = 190;
 
-    /*
-     * Background
-     */
-
     drawRect(
         0,
         0,
@@ -732,10 +713,6 @@ void drawHome(int selectedVideo)
 
     drawHeader(PAGE_HOME);
 
-    /*
-     * Section title
-     */
-
     drawTextLarge(
         18,
         53,
@@ -744,7 +721,7 @@ void drawHome(int selectedVideo)
     );
 
     /*
-     * First row
+     * Row 1
      */
 
     drawThumbnail(
@@ -792,7 +769,7 @@ void drawHome(int selectedVideo)
     );
 
     /*
-     * Second row
+     * Row 2
      */
 
     drawThumbnail(
@@ -947,10 +924,6 @@ void drawSearch(void)
         COLOR_TEXT
     );
 
-    /*
-     * Search field
-     */
-
     drawBorder(
         20,
         90,
@@ -967,10 +940,6 @@ void drawSearch(void)
         COLOR_DIM
     );
 
-    /*
-     * Search button
-     */
-
     drawRect(
         365,
         90,
@@ -985,10 +954,6 @@ void drawSearch(void)
         "SEARCH",
         COLOR_TEXT
     );
-
-    /*
-     * Input placeholder
-     */
 
     drawText(
         20,
@@ -1065,7 +1030,8 @@ void drawLibrary(void)
 
 void drawSettings(int selectedSetting)
 {
-    const char *items[] = {
+    const char *items[] =
+    {
         "VIDEO QUALITY",
         "AUTOPLAY",
         "THEME",
@@ -1160,7 +1126,7 @@ void drawSettings(int selectedSetting)
 void drawVideoDetails(int selectedVideo)
 {
     /*
-     * Safety for array access.
+     * Make sure the index is valid.
      */
 
     if (selectedVideo < 0)
@@ -1180,7 +1146,7 @@ void drawVideoDetails(int selectedVideo)
     drawHeader(PAGE_VIDEO);
 
     /*
-     * Video preview
+     * Preview
      */
 
     drawThumbnail(
@@ -1192,7 +1158,7 @@ void drawVideoDetails(int selectedVideo)
     );
 
     /*
-     * Information
+     * Video information
      */
 
     drawTextLarge(
@@ -1229,4 +1195,38 @@ void drawVideoDetails(int selectedVideo)
     );
 
     drawText(
-        32
+        325,
+        152,
+        "PLAY",
+        COLOR_TEXT
+    );
+
+    /*
+     * Description
+     */
+
+    drawBorder(
+        20,
+        195,
+        440,
+        55,
+        1,
+        COLOR_BORDER
+    );
+
+    drawText(
+        30,
+        207,
+        "VIDEO DETAILS",
+        COLOR_TEXT
+    );
+
+    drawText(
+        30,
+        228,
+        "PLAYBACK WILL BE ADDED LATER",
+        COLOR_DIM
+    );
+}
+
+/* -----------
