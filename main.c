@@ -23,7 +23,6 @@ PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
 #define SIDEBAR_WIDTH 125
 #define SIDEBAR_SPEED 20
 
-typedef unsigned int u32;
 
 typedef struct {
     int x;
