@@ -93,7 +93,18 @@ jobs:
           export PSPDEV=/usr/local/pspdev
           export PATH=$PSPDEV/bin:$PATH
 
+          echo "=== Source verification ==="
+          grep -n "COLOR_RED" main.c
+
+          echo "=== Clean build ==="
+          make clean || true
+          rm -f main.o youtube_raw.o EBOOT.PBP
+
+          echo "=== Building ==="
           make
+
+          echo "=== Build result ==="
+          ls -lh EBOOT.PBP
 
       - name: Upload EBOOT.PBP
         uses: actions/upload-artifact@v4
