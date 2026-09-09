@@ -67,11 +67,17 @@ jobs:
 
           mkdir -p assets
 
+          echo "=== Checking source icon ==="
+          ls -lh assets/youtube.png
+          identify assets/youtube.png
+
           echo "=== Creating ICON0.PNG ==="
 
           convert assets/youtube.png \
-            -resize 48x48 \
-            -background "#121212" \
+            -trim \
+            +repage \
+            -resize 144x80 \
+            -background "#000000" \
             -gravity center \
             -extent 144x80 \
             PNG32:ICON0.PNG
@@ -84,6 +90,7 @@ jobs:
             RGBA:assets/youtube.raw
 
           echo "=== Generated files ==="
+          identify ICON0.PNG
           ls -lh assets/youtube.png
           ls -lh assets/youtube.raw
           ls -lh ICON0.PNG
