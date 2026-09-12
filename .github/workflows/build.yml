@@ -1,0 +1,76 @@
+name: Build PSP App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PSPDEV: /usr/local/pspdev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare PSP toolchain
+        run: |
+          sudo mkdir -p /usr/local/pspdev
+          sudo chown -R "$USER:$USER" /usr/local/pspdev
+          git clone --depth 1 https://github.com/pspdev/psptoolchain.git
+          cd psptoolchain
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+          ./prepare.sh
+          ./toolchain.sh
+
+      - name: Install PSPSDK
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+          git clone --depth 1 https://github.com/pspdev/pspsdk.git
+          cd pspsdk
+          ./bootstrap
+          ./configure --prefix="$PSPDEV/psp"
+          make -j2
+          make install
+
+      - name: Install intraFont
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+          git clone --depth 1 https://github.com/pspdev/libintraFont.git
+          cd libintraFont
+          make -f Makefile.psp
+          make -f Makefile.psp install
+
+      - name: Prepare icon
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          convert assets/youtube.png -resize 48x48 -background "#101318" -gravity center -extent 144x80 PNG32:ICON0.PNG
+
+      - name: Verify environment
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+          psp-gcc --version
+          psp-config --pspsdk-path
+          test -f "$PSPDEV/psp/lib/libintrafont.a"
+          test -f "$PSPDEV/psp/include/intraFont.h"
+
+      - name: Build
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH=$PSPDEV/bin:$PATH
+          make clean || true
+          rm -f main.o PSPYouTube.elf PARAM.SFO EBOOT.PBP
+          make
+          ls -lh EBOOT.PBP
+
+      - name: Upload EBOOT.PBP
+        uses: actions/upload-artifact@v4
+        with:
+          name: PSPYouTube-0.2v-modern-ui
+          path: EBOOT.PBP
