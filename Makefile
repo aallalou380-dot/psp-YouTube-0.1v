@@ -5,7 +5,9 @@ CFLAGS = -O2 -G0 -Wall
 CXXFLAGS = $(CFLAGS)
 ASFLAGS = $(CFLAGS)
 
-LIBS = -lpspaudio -lpspgu -lpspdisplay -lpspctrl -lpspsdk
+# PSP YouTube 0.2v
+# intraFont مطلوب للخطوط الناعمة
+LIBS = -lintraFont -lpspaudio -lpspgu -lpspdisplay -lpspctrl -lpspsdk
 
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = PSP YouTube 0.2v
