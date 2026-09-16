@@ -11,7 +11,7 @@ LIBS = -lintrafont -lpspaudio -lpspgu -lpspdisplay -lpspctrl -lpspsdk
 
 EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = PSP YouTube 0.2v
-PSP_EBOOT_ICON = ICON0.PNG
+PSP_EBOOT_ICON = NULL
 
 PSPSDK = $(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
