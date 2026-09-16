@@ -74,6 +74,26 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare icon
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH="$PSPDEV/bin:$PATH"
+
+          echo "=== Prepare ICON0.PNG ==="
+
+          if [ -f ICON0.PNG ]; then
+            echo "ICON0.PNG already exists"
+          elif [ -f assets/youtube.png ]; then
+            cp assets/youtube.png ICON0.PNG
+            echo "Created ICON0.PNG from assets/youtube.png"
+          else
+            echo "ERROR: assets/youtube.png not found"
+            exit 1
+          fi
+
+          echo "=== ICON0.PNG ==="
+          ls -lh ICON0.PNG
+
       - name: Build
         run: |
           export PSPDEV=/usr/local/pspdev
