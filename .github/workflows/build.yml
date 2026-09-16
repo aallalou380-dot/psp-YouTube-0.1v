@@ -59,10 +59,20 @@ jobs:
           echo "=== intraFont library ==="
           find "$PSPDEV/psp/lib" \
             \( -name 'libintraFont.a' -o -name 'libintrafont.a' \) \
-            -ls
+            -print
+
+          echo "=== Checking required files ==="
 
           test -f "$PSPDEV/psp/include/intraFont.h"
-          test -f "$PSPDEV/psp/lib/libintraFont.a"
+
+          if [ -f "$PSPDEV/psp/lib/libintraFont.a" ]; then
+            echo "FOUND: libintraFont.a"
+          elif [ -f "$PSPDEV/psp/lib/libintrafont.a" ]; then
+            echo "FOUND: libintrafont.a"
+          else
+            echo "ERROR: intraFont library not found"
+            exit 1
+          fi
 
       - name: Build
         run: |
