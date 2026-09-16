@@ -18,15 +18,15 @@ jobs:
 
       - name: Prepare PSP toolchain
         run: |
-          sudo mkdir -p /usr/local/pspdev
-          sudo chown -R "$USER:$USER" /usr/local/pspdev
+          sudo mkdir -p "$PSPDEV"
+          sudo chown -R "$USER:$USER" "$PSPDEV"
 
           git clone --depth 1 https://github.com/pspdev/psptoolchain.git
 
           cd psptoolchain
 
           export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
+          export PATH="$PSPDEV/bin:$PATH"
 
           ./prepare.sh
           ./toolchain.sh
@@ -34,7 +34,7 @@ jobs:
       - name: Install PSPSDK
         run: |
           export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
+          export PATH="$PSPDEV/bin:$PATH"
 
           git clone --depth 1 https://github.com/pspdev/pspsdk.git
 
@@ -46,54 +46,46 @@ jobs:
           make -j2
           make install
 
+      - name: Install PSP package manager
+        run: |
+          export PSPDEV=/usr/local/pspdev
+          export PATH="$PSPDEV/bin:$PATH"
+
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libarchive-dev \
+            libarchive-tools \
+            libcurl4-openssl-dev \
+            libgpgme-dev \
+            libssl-dev \
+            pkg-config \
+            meson \
+            ninja-build \
+            wget
+
+          git clone --depth 1 https://github.com/pspdev/psp-pacman.git
+
+          cd psp-pacman
+
+          ./build-and-install.sh
+
       - name: Install intraFont
         run: |
           export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
+          export PATH="$PSPDEV/bin:$PATH"
 
-          rm -rf libintraFont
+          echo "=== Installing libintrafont ==="
 
-          git clone --depth 1 https://github.com/PSP-Archive/intraFont.git libintraFont
+          psp-pacman -Sy --noconfirm libintrafont
 
-          cd libintraFont
-
-          echo "=== intraFont source ==="
-          ls -la
-
-          echo "=== Build intraFont ==="
-
-          if [ -f Makefile.psp ]; then
-            make -f Makefile.psp
-            make -f Makefile.psp install
-          elif [ -f Makefile ]; then
-            make
-            make install
-          else
-            echo "ERROR: No intraFont Makefile found"
-            exit 1
-          fi
-
-      - name: Verify intraFont
-        run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
-
-          echo "=== Searching for intraFont ==="
+          echo "=== Verify intraFont ==="
 
           find "$PSPDEV" \
-            -iname '*intrafont*' -o -iname 'libccc.a' \
-            -print | sort
-
-          echo "=== Checking header ==="
+            \( -name 'libintraFont.a' -o -name 'libintrafont.a' \) \
+            -print
 
           test -f "$PSPDEV/psp/include/intraFont.h"
-
-          echo "=== Checking libraries ==="
-
-          find "$PSPDEV" \
-            -name 'libintraFont.a' \
-            -o -name 'libintrafont.a' \
-            -o -name 'libccc.a'
 
       - name: Prepare icon
         run: |
@@ -110,7 +102,7 @@ jobs:
       - name: Verify PSP environment
         run: |
           export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
+          export PATH="$PSPDEV/bin:$PATH"
 
           echo "=== PSP GCC ==="
           psp-gcc --version
@@ -120,7 +112,7 @@ jobs:
 
           echo "=== intraFont ==="
           find "$PSPDEV/psp" \
-            -name 'libintraFont.a' -o -name 'libintrafont.a' -o -name 'libccc.a' \
+            \( -name 'libintraFont.a' -o -name 'libintrafont.a' \) \
             -print
 
           test -f "$PSPDEV/psp/include/intraFont.h"
@@ -128,7 +120,7 @@ jobs:
       - name: Build
         run: |
           export PSPDEV=/usr/local/pspdev
-          export PATH=$PSPDEV/bin:$PATH
+          export PATH="$PSPDEV/bin:$PATH"
 
           echo "=== Clean ==="
 
@@ -151,4 +143,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PSPYouTube-0.2v-modern-ui
-          path:
+          path: EBOOT.PBP
