@@ -48,18 +48,6 @@ jobs:
 
           test -f "$PSPDEV/psp/include/intraFont.h"
 
-      - name: Prepare icon
-        run: |
-          apt-get update
-          apt-get install -y imagemagick
-
-          convert assets/youtube.png \
-            -resize 48x48 \
-            -background "#101318" \
-            -gravity center \
-            -extent 144x80 \
-            PNG32:ICON0.PNG
-
       - name: Verify libraries
         run: |
           export PSPDEV=/usr/local/pspdev
