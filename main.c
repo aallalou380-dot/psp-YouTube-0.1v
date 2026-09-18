@@ -4,6 +4,7 @@
 #include <pspgu.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 #include <intraFont.h>
 
 PSP_MODULE_INFO("PSP YouTube 0.2v", 0, 1, 0);
