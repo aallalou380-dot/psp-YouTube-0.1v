@@ -1,17 +1,22 @@
 TARGET = PSPYouTube
+
 OBJS = main.o
 
-CFLAGS = -O2 -G0 -Wall
-CXXFLAGS = $(CFLAGS)
-ASFLAGS = $(CFLAGS)
+CXX = psp-g++
 
-# intraFont = smooth PSP font rendering.
-# psputility = native PSP OSK for the YouTube search field.
-LIBS = -lintrafont -lpsputility -lpspaudio -lpspgu -lpspdisplay -lpspctrl -lpspsdk
+CXXFLAGS = -O2 -G0 -Wall -fno-exceptions -fno-rtti
+
+LIBS = \
+	-lintraFont \
+	-lpspgu \
+	-lpspdisplay \
+	-lpspctrl \
+	-lpspsdk
 
 EXTRA_TARGETS = EBOOT.PBP
-PSP_EBOOT_TITLE = PSP YouTube 0.2v
-PSP_EBOOT_ICON = ICON0.PNG
+
+PSP_EBOOT_TITLE = PSP YouTube 
 
 PSPSDK = $(shell psp-config --pspsdk-path)
+
 include $(PSPSDK)/lib/build.mak
