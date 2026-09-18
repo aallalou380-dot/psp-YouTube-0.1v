@@ -12,24 +12,29 @@ jobs:
       image: pspdev/pspdev:latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update packages
+      - name: Update package database
         run: |
-          psp-pacman -Syu --noconfirm || true
+          psp-pacman -Sy --noconfirm
 
       - name: Install intraFont
         run: |
           psp-pacman -S --needed --noconfirm libintrafont
+
+      - name: Verify intraFont
+        run: |
+          echo "Checking intraFont..."
+          find /usr/local/pspdev/psp -name '*intraFont*' -o -name '*intrafont*'
+          ls -l /usr/local/pspdev/psp/lib/libintraFont.a
 
       - name: Build
         run: |
           make clean || true
           make
 
-      - name: Prepare PSP folder
+      - name: Prepare release
         run: |
           mkdir -p release/PSP/GAME/PSPYouTube
           cp EBOOT.PBP release/PSP/GAME/PSPYouTube/
