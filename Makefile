@@ -7,7 +7,7 @@ CXX = psp-g++
 CXXFLAGS = -O2 -G0 -Wall -fno-exceptions -fno-rtti
 
 LIBS = \
-	-lintraFont \
+	-lintrafont \
 	-lpspgu \
 	-lpspdisplay \
 	-lpspctrl \
