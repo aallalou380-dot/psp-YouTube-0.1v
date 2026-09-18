@@ -23,11 +23,11 @@ jobs:
         run: |
           psp-pacman -S --needed --noconfirm libintrafont
 
-      - name: Verify intraFont
-        run: |
-          echo "Checking intraFont..."
-          find /usr/local/pspdev/psp -name '*intraFont*' -o -name '*intrafont*'
-          ls -l /usr/local/pspdev/psp/lib/libintraFont.a
+- name: Verify intraFont
+  run: |
+    echo "Checking intraFont..."
+    find /usr/local/pspdev/psp -name '*intraFont*' -o -name '*intrafont*'
+    ls -l /usr/local/pspdev/psp/lib/libintrafont.a
 
       - name: Build
         run: |
