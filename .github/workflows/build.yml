@@ -1,9 +1,8 @@
-name: Build PSP App
+name: Build PSP YouTube 0.2v
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  push:
 
 jobs:
   build:
@@ -13,111 +12,30 @@ jobs:
       image: pspdev/pspdev:latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify PSPDEV
+      - name: Update packages
         run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH="$PSPDEV/bin:$PATH"
-
-          echo "=== PSPDEV ==="
-          echo "$PSPDEV"
-
-          echo "=== PSP GCC ==="
-          psp-gcc --version
-
-          echo "=== PSPSDK ==="
-          psp-config --pspsdk-path
+          psp-pacman -Syu --noconfirm || true
 
       - name: Install intraFont
         run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH="$PSPDEV/bin:$PATH"
-
-          echo "=== Updating PSP package database ==="
-          psp-pacman -Sy --noconfirm
-
-          echo "=== Installing intraFont ==="
-          psp-pacman -S --noconfirm libintrafont
-
-          echo "=== Checking intraFont ==="
-          find "$PSPDEV/psp" \
-            \( -name 'libintraFont.a' -o -name 'libintrafont.a' \) \
-            -print
-
-          test -f "$PSPDEV/psp/include/intraFont.h"
-
-      - name: Verify libraries
-        run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH="$PSPDEV/bin:$PATH"
-
-          echo "=== intraFont header ==="
-          ls -lh "$PSPDEV/psp/include/intraFont.h"
-
-          echo "=== intraFont library ==="
-          find "$PSPDEV/psp/lib" \
-            \( -name 'libintraFont.a' -o -name 'libintrafont.a' \) \
-            -print
-
-          echo "=== Checking required files ==="
-
-          test -f "$PSPDEV/psp/include/intraFont.h"
-
-          if [ -f "$PSPDEV/psp/lib/libintraFont.a" ]; then
-            echo "FOUND: libintraFont.a"
-          elif [ -f "$PSPDEV/psp/lib/libintrafont.a" ]; then
-            echo "FOUND: libintrafont.a"
-          else
-            echo "ERROR: intraFont library not found"
-            exit 1
-          fi
-
-      - name: Prepare icon
-        run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH="$PSPDEV/bin:$PATH"
-
-          echo "=== Prepare ICON0.PNG ==="
-
-          if [ -f ICON0.PNG ]; then
-            echo "ICON0.PNG already exists"
-          elif [ -f assets/youtube.png ]; then
-            cp assets/youtube.png ICON0.PNG
-            echo "Created ICON0.PNG from assets/youtube.png"
-          else
-            echo "ERROR: assets/youtube.png not found"
-            exit 1
-          fi
-
-          echo "=== ICON0.PNG ==="
-          ls -lh ICON0.PNG
+          psp-pacman -S --needed --noconfirm libintrafont
 
       - name: Build
         run: |
-          export PSPDEV=/usr/local/pspdev
-          export PATH="$PSPDEV/bin:$PATH"
-
-          echo "=== Clean ==="
-
           make clean || true
-
-          rm -f main.o
-          rm -f PSPYouTube.elf
-          rm -f PARAM.SFO
-          rm -f EBOOT.PBP
-
-          echo "=== Build PSP YouTube 0.2v ==="
-
           make
 
-          echo "=== Build result ==="
+      - name: Prepare PSP folder
+        run: |
+          mkdir -p release/PSP/GAME/PSPYouTube
+          cp EBOOT.PBP release/PSP/GAME/PSPYouTube/
 
-          ls -lh EBOOT.PBP
-
-      - name: Upload EBOOT.PBP
+      - name: Upload EBOOT
         uses: actions/upload-artifact@v4
         with:
-          name: PSPYouTube-0.2v-modern-ui
-          path: EBOOT.PBP
+          name: PSP-YouTube-0.2v
+          path: release/
