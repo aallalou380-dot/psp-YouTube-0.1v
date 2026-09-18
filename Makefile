@@ -16,6 +16,7 @@ LIBS = \
 EXTRA_TARGETS = EBOOT.PBP
 
 PSP_EBOOT_TITLE = PSP YouTube 
+PSP_EBOOT_ICON = ICON0.PNG
 
 PSPSDK = $(shell psp-config --pspsdk-path)
 
