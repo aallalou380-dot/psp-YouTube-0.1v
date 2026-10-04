@@ -1,0 +1,9 @@
+{
+  "name": "psp-youtube-0.2v",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@pocketjs/framework": "workspace:*",
+    "solid-js": "^1.9.0"
+  }
+}
