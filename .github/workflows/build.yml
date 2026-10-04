@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout PSP YouTube
         uses: actions/checkout@v4
 
       - name: Setup Bun
@@ -21,19 +21,27 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install PocketJS CLI
-        run: npm install -g @pocketjs/cli
+      - name: Checkout PocketJS
+        uses: actions/checkout@v4
+        with:
+          repository: pocket-nexus/pocketjs
+          path: pocketjs
 
-      - name: Check PocketJS environment
-        run: pocket doctor
+      - name: Install PocketJS dependencies
+        working-directory: pocketjs
+        run: bun install
 
       - name: Setup PocketJS PSP toolchain
-        run: pocket setup
+        working-directory: pocketjs
+        run: bun run bootstrap
+
+      - name: Install PocketJS CLI
+        run: npm install -g @pocketjs/cli
 
       - name: Check PSP YouTube
         run: pocket check --target psp --manifest pocket.json
 
-      - name: Build PSP EBOOT
+      - name: Build PSP YouTube
         run: pocket build --target psp --manifest pocket.json -- --release
 
       - name: Find EBOOT.PBP
