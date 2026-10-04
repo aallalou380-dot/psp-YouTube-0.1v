@@ -1,0 +1,22 @@
+{
+  "$schema": "https://pocketjs.dev/schema/pocket-2.json",
+  "pocket": 2,
+  "id": "dev.pspyoutube.youtube",
+  "name": "psp-youtube",
+  "title": "PSP YouTube 0.2v",
+  "version": "0.2.0",
+  "engine": {
+    "capabilities": {
+      "requires": ["text.glyphs.baked", "input.buttons"]
+    }
+  },
+  "app": {
+    "entry": "app/main.tsx",
+    "output": "psp-youtube",
+    "framework": "solid",
+    "viewport": {
+      "logical": [480, 272],
+      "presentation": "integer-fit"
+    }
+  }
+}
