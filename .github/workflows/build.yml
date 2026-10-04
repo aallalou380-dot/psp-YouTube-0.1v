@@ -1,47 +1,48 @@
 name: Build PSP YouTube 0.2v
 
 on:
-  workflow_dispatch:
   push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-psp:
     runs-on: ubuntu-latest
-
-    container:
-      image: pspdev/pspdev:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update package database
-        run: |
-          psp-pacman -Sy --noconfirm
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-      - name: Install intraFont
-        run: |
-          psp-pacman -S --needed --noconfirm libintrafont
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Verify intraFont
-        run: |
-          echo "Checking intraFont..."
-          find /usr/local/pspdev/psp -name '*intraFont*' -o -name '*intrafont*'
-          ls -l /usr/local/pspdev/psp/lib/libintrafont.a
+      - name: Install PocketJS CLI
+        run: npm install -g @pocketjs/cli
 
-      - name: Build
-        run: |
-          make clean || true
-          make
+      - name: Check PocketJS environment
+        run: pocket doctor
 
-      - name: Prepare release
-        run: |
-          mkdir -p release/PSP/GAME/PSPYouTube
-          cp EBOOT.PBP release/PSP/GAME/PSPYouTube/
+      - name: Setup PocketJS PSP toolchain
+        run: pocket setup
 
-      - name: Upload EBOOT
+      - name: Check PSP YouTube
+        run: pocket check --target psp --manifest pocket.json
+
+      - name: Build PSP EBOOT
+        run: pocket build --target psp --manifest pocket.json -- --release
+
+      - name: Find EBOOT.PBP
+        run: |
+          find . -type f -name "EBOOT.PBP" -print
+
+      - name: Upload EBOOT.PBP
         uses: actions/upload-artifact@v4
         with:
-          name: PSP-YouTube-0.2v
-          path: release/
+          name: PSP-YouTube-0.2v-EBOOT
+          path: "**/EBOOT.PBP"
           if-no-files-found: error
