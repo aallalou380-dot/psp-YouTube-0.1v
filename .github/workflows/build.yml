@@ -32,7 +32,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang llvm
 
-
       - name: Install PocketJS dependencies
         working-directory: pocketjs
         run: bun install
@@ -44,19 +43,34 @@ jobs:
       - name: Install PocketJS CLI
         run: npm install -g @pocketjs/cli
 
+      - name: Copy PSP YouTube into PocketJS
+        run: |
+          mkdir -p pocketjs/apps/psp-youtube
+          cp -r app pocketjs/apps/psp-youtube/
+          cp pocket.json pocketjs/apps/psp-youtube/
+
       - name: Check PSP YouTube
-        run: pocket check --target psp --manifest pocket.json
+        working-directory: pocketjs
+        run: |
+          pocket check \
+            --target psp \
+            --manifest apps/psp-youtube/pocket.json
 
       - name: Build PSP YouTube
-        run: pocket build --target psp --manifest pocket.json -- --release
+        working-directory: pocketjs
+        run: |
+          pocket build \
+            --target psp \
+            --manifest apps/psp-youtube/pocket.json \
+            -- --release
 
       - name: Find EBOOT.PBP
         run: |
-          find . -type f -name "EBOOT.PBP" -print
+          find pocketjs -type f -name "EBOOT.PBP" -print
 
       - name: Upload EBOOT.PBP
         uses: actions/upload-artifact@v4
         with:
           name: PSP-YouTube-0.2v-EBOOT
-          path: "**/EBOOT.PBP"
+          path: "pocketjs/**/EBOOT.PBP"
           if-no-files-found: error
